@@ -1,7 +1,8 @@
 # semantic-sign-language-search
 Search a folder of sign language videos semantically.
 
-OK so recapping:
+
+The basic plan, using `pose-format` and `segmentation`
 
     videos_to_poses on my data
     pose_to_segments on each .pose
@@ -9,7 +10,21 @@ OK so recapping:
     embed with signCLIP, save off the embeddings
     FAISS maybe?
 
-How to search?
+
+### How to estimate poses?
+`videos_to_poses`
+https://github.com/sign-language-processing/pose/blob/master/src/python/pyproject.toml#L61-L64
+
+### How to segment?
+`pose_to_segments`
+* Demo of segmentation and recognition
+* https://github.com/sign-language-processing/segmentation
+
+### How to embed?
+`pose_segment_to_embedding` (not implemented yet)
+* SignClip!
+
+### How to search?
 * FAISS maybe?
 
 Amit says: 
