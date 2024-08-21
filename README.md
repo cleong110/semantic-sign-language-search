@@ -12,7 +12,6 @@ https://github.com/sign-language-processing/pose/blob/master/src/python/pyprojec
 ### How to segment?
 `pose_to_segments` from `segmentation`
 * [Demo of segmentation and recognition](https://colab.research.google.com/drive/1CKlXVI3vP0NKZDZZ_I-Qb_wSHt2cw4VT#scrollTo=20_nuF7w3d4N)
-* 
 * https://github.com/sign-language-processing/segmentation
 * https://github.com/sign-language-processing/recognition/blob/main/sign_language_recognition/bin.py cuts but doesn't save
 
