@@ -1,0 +1,28 @@
+#torch==1.8
+
+
+mediapipe
+vidgear
+pose-format
+webvtt
+
+
+# needed by the demo demo_sign.py
+tensorflow_datasets
+
+# not needed? Maybe?
+sign-language-datasets
+
+
+# for visualization
+#scikit-learn
+#seaborn
+
+# VideoCLIP says "Most models require transformers==3.4 for API compatibility"
+tokenizers
+transformers==3.4
+
+git+https://github.com/sign-language-processing/transcription.git@1f2cef8
+git+https://github.com/sign-language-processing/pose-anonymization
+git+https://github.com/sign-language-processing/sign-vq
+
