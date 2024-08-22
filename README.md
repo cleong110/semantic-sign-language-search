@@ -15,6 +15,15 @@ https://github.com/sign-language-processing/pose/blob/master/src/python/pyprojec
 * https://github.com/sign-language-processing/segmentation
 * https://github.com/sign-language-processing/recognition/blob/main/sign_language_recognition/bin.py cuts but doesn't save
 
+Saving a Pose to a .pose:
+```python
+    # Write
+    print('Saving to disk ...')
+    with open(output_path, "wb") as f:
+        pose.write(f)
+```
+TODO: PR to pose-format to document this
+
 ### How to embed?
 `pose_segment_to_embedding` (not implemented yet)
 * SignClip!
