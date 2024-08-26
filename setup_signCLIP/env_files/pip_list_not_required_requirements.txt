@@ -1,0 +1,12 @@
+fairseq==0.12.2
+mediapipe==0.10.11
+mmpt==0.0.1
+pip==24.0
+pose-anonymization==0.0.1
+sign-language-datasets==0.2.0
+sign-transcription==0.0.1
+sign-vq==0.0.1
+tensorflow-datasets==4.9.2
+transformers==3.4.0
+vidgear==0.3.3
+webvtt-py==0.5.1

@@ -1,0 +1,8 @@
+name: signclip
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pip[version='<24.1']
+  - python=3.8.8
+prefix: /home/cleong/miniconda3/envs/signclip
