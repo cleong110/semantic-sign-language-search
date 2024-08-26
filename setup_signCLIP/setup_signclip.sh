@@ -30,7 +30,9 @@ exit
 # wget -nc is "no clobber" aka don't redownload.
 
 pretrained_models_folder="fairseq/examples/MMPT/pretrained_models"
+demo_model_folder="runs/signclip_demo/baseline_temporal_checkpoint_best/"
 mkdir -p "$pretrained_models_folder"
+mkdir -p "$demo_model_folder"
 
 
 # VideoCLIP README at https://github.com/facebookresearch/fairseq/tree/main/examples/MMPT
@@ -56,7 +58,7 @@ mkdir -p "$pretrained_models_folder"
 # https://drive.google.com/file/d/1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu/view?usp=drive_link
 # Use --continue flag to skip fully downloaded files
 pip install gdown 
-gdown --continue "https://drive.google.com/uc?id=1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu" -O checkpoint_best.pt
+gdown --continue "https://drive.google.com/uc?id=1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu" -O "$demo_model_folder/checkpoint_best.pt"
 
 
 
