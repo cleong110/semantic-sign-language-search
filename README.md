@@ -37,3 +37,7 @@ then search using the built in database search, similarity, etc. fast stuff
 
 ### baseline: search the .poses?
 Take the pose vectors and search _those_
+
+
+## Future work: better models?
+* https://github.com/openai/CLIP/issues/83 Wei Chih Chern's training code
