@@ -1,0 +1,6 @@
+pose-format
+opencv-python
+mediapipe
+vidgear
+git+https://github.com/sign-language-processing/segmentation
+pympi-ling # Working with ELAN files in CLI
