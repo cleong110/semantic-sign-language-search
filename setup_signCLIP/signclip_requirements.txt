@@ -4,8 +4,7 @@
 mediapipe
 vidgear
 pose-format
-webvtt
-
+webvtt-py
 
 # needed by the demo demo_sign.py
 tensorflow_datasets
