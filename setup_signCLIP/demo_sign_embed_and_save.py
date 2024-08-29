@@ -15,6 +15,7 @@ import typing
 
 # TODO: don't load every model at once
 # TODO: get this into proper version control
+# TODO: get things into main
 
 mp_holistic = mp.solutions.holistic
 FACEMESH_CONTOURS_POINTS = [
@@ -267,7 +268,7 @@ if __name__ == "__main__":
 
 
         embeddings = embed_pose(pose, model_name)
-        embed_out_name = Path(pose_path).stem + "-using-model-"+ model_name+".npy"      
+        embed_out_name =Path(pose_path).parent + Path(pose_path).stem + "-using-model-"+ model_name+".npy"      
         print(embed_out_name)  
         save_pose_embedding(embeddings, out_path=Path(embed_out_name))
         
