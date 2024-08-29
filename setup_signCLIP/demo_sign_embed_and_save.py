@@ -13,6 +13,9 @@ from pathlib import Path
 import os
 import typing
 
+# TODO: don't load every model at once
+# TODO: get this into proper version control
+
 mp_holistic = mp.solutions.holistic
 FACEMESH_CONTOURS_POINTS = [
     str(p)
@@ -23,7 +26,10 @@ FACEMESH_CONTOURS_POINTS = [
 
 
 model_configs = [
-    ("default", "signclip_v1_1/baseline_temporal_demo"),  # made my own -Colin
+    # ("baseline_temporal", "semantic-search/embed_with_baseline_temporal"),  # made my own -Colin
+    # ("sem-lex", "semantic-search/embed_with_sem_lex"),
+    # ("asl-signs", "semantic-search/embed_with_asl_signs"),
+    ("asl-citizen", "semantic-search/embed_with_asl_citizen"),
     # ('default', 'signclip_v1_1/baseline_temporal'),
     # ('asl_citizen', 'signclip_asl/asl_citizen_finetune'),
 ]
@@ -261,7 +267,9 @@ if __name__ == "__main__":
 
 
         embeddings = embed_pose(pose, model_name)
-        save_pose_embedding(embeddings, out_path=Path(pose_path).with_suffix(".npy"))
+        embed_out_name = Path(pose_path).stem + "-using-model-"+ model_name+".npy"      
+        print(embed_out_name)  
+        save_pose_embedding(embeddings, out_path=Path(embed_out_name))
         
 
 
@@ -283,4 +291,5 @@ if __name__ == "__main__":
         # print("some unrelated words")
         # for unrelated_word in unrelated_words:
         #     print(score_pose_and_text(pose, f"<en> <ase> {unrelated_word}"))
+
 
