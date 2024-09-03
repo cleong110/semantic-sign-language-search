@@ -6,25 +6,23 @@ set -o nounset
 ######################
 # Script to setup SignCLIP on a new workstation.
 # TODO: create my own version of /J22Melody/fairseq/examples/MMPT/projects/retri/signclip_v1_1/baseline_temporal.yaml and commit it here
-# TODO: Also my own version of demo_sign.py which uses that. 
 
 
 # https://saturncloud.io/blog/activating-conda-environments-from-scripts-a-guide-for-data-scientists/#activating-a-conda-environment-from-a-script
 eval "$(conda shell.bash hook)"
+conda create -n gdown pip
+conda activate gdown
+pip install gdown 
 
 # Edit this if you want it setup elsewhere
 signclip_parent="$HOME/projects/semantic-sign-language-search/setup_signCLIP"
 mkdir -p "$signclip_parent"
 cd "$signclip_parent"
 
-conda activate gdown
-conda list
-gdown --help
 
 # https://github.com/J22Melody/fairseq/tree/5f9ab7ebd1fe7e000f282da1bce9f212ba9871c2/examples/MMPT
 git clone https://github.com/J22Melody/fairseq.git || echo "already cloned"
 
-exit
 ##################################################
 # Download checkpoints and models
 # wget -nc is "no clobber" aka don't redownload.
@@ -57,9 +55,13 @@ mkdir -p "$demo_model_folder"
 # The actual model for SignCLIP, which needs to be named checkpoint_best.pt for SignCLIP to work
 # https://drive.google.com/file/d/1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu/view?usp=drive_link
 # Use --continue flag to skip fully downloaded files
-pip install gdown 
-gdown --continue "https://drive.google.com/uc?id=1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu" -O "$demo_model_folder/checkpoint_best.pt"
+gdown --continue "https://drive.google.com/uc?id=1_B_VZMaLqY1nV6z9AokWU_G6LvOQLZFu" # baseline_temporal_checkpoint_best.pt
+gdown --continue --fuzzy "https://drive.google.com/file/d/1Xun_2MQpyR6Ze2LuV1N_xMnTzRcts9Jv/view?usp=drive_link" # sem_lex_finetune_checkpoint_best.pt
+gdown --continue --fuzzy "https://drive.google.com/file/d/1qst_2vt8zeNnmEEiONfkqa1ApMSgwU1t/view?usp=drive_link" # asl_signs_finetune_checkpoint_best.pt
+gdown --continue --fuzzy "https://drive.google.com/file/d/166aUSU5HkrMlpCkMNQF_rBLymX56P3fn/view?usp=drive_link" # asl_citizen_finetune_checkpoint_best.pt
 
+# the model HAS to be named this
+cp -v "baseline_temporal_checkpoint_best.pt" "$demo_model_folder/checkpoint_best.pt"
 
 
 ###################
@@ -116,8 +118,3 @@ pip install -r signclip_requirements.txt
 
 echo "installed requirements.txt. pip list is now:"
 pip list
-
-
-
-
-
