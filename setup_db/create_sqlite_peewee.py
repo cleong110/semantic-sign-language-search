@@ -108,4 +108,4 @@ if __name__ == "__main__":
             print(result_output)
         print(f"{match_count}/{results_limit-1} with the same gloss")
         match_counts.append(match_count)
-    print(f"Mean match count out of 10 {np.mean(match_counts)}")
+    print(f"Mean match count (up to 4 correct out of {results_limit-1} retrieved) {np.mean(match_counts)}")
