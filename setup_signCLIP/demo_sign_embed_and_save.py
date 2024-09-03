@@ -10,11 +10,7 @@ import mediapipe as mp
 
 from pathlib import Path
 
-import os
-import typing
-
 # TODO: don't load every model at once
-# TODO: get this into proper version control
 # TODO: get things into main
 # TODO: iterate over files in folder
 
@@ -38,6 +34,7 @@ model_configs = [
 models = {}
 
 for model_name, config_path in model_configs:
+    continue
     # Go get the config file, the config file tells you where to get the checkpoint
     model, tokenizer, aligner = MMPTModel.from_pretrained(
         f"projects/retri/{config_path}.yaml",
@@ -223,75 +220,10 @@ if __name__ == "__main__":
         buffer = f.read()
         pose = Pose.read(buffer)
 
-        # https://relatedwords.io/house
-        related_words = [
-            "family",
-            "home",
-            "apartment",
-            "residence",
-            "bedroom",
-            "bathroom",
-            "room",
-            "building",
-            "cottage",
-            "mansion",
-            "kitchen",
-            "hall",
-            "door",
-            "household",
-            "car",
-            "villa",
-            "property",
-            "bungalow",
-        ]
-
-        unrelated_words = [
-            "moon",
-            "soon",
-            "kenya",
-            "sign of the zodiac",
-            "homeoplasty",
-            "homeopathy",
-            "porterhouse",
-            "chouse",
-
-        ]
-
-        # print(score_pose_and_text(pose, "random text"))
-        # print(score_pose_and_text(pose, "houses"))
-        # print(score_pose_and_text(pose, "home"))
-        # print(score_pose_and_text(pose, "house"))
-        # print(score_pose_and_text(pose, "<en> <ase> house"))
-        # print(score_pose_and_text(pose, "<en> <ase> home"))
-        # print(score_pose_and_text(pose, "<en> <ase> houses"))
-
-        # print(score_pose_and_text_batch(pose,  "<en> <ase> house")) # same result. The underlying functions support lists or just single items
-
 
         embeddings = embed_pose(pose, model_name)
-        embed_out_name =str(Path(pose_path).parent) + Path(pose_path).stem + "-using-model-"+ model_name+".npy"      
+        embed_out_name =str(Path(pose_path).parent / Path(pose_path).stem) + "-using-model-"+ model_name+".npy"      
         print(embed_out_name)  
         save_pose_embedding(embeddings, out_path=Path(embed_out_name))
-        
-
-
-        # loaded_embeddings = load_pose_embedding(embedding_path=Path(pose_path).with_suffix(".npy"))
-        # print(f"Are loaded embeddings the same as original?")
-
-        # print(np.array_equal(embeddings, loaded_embeddings))
-
-        # print(score_pose_and_text(pose, "<en> <gsg> house"))
-        # print(score_pose_and_text(pose, "<en> <fsl> house"))
-        # print(score_pose_and_text(pose, "<en> <ase> sun"))
-        # print(score_pose_and_text(pose, "<en> <ase> police"))
-        # print(score_pose_and_text(pose, "<en> <ase> how are you?"))
-
-        # print("various related words")
-        # for related_word in related_words:
-        #     print(score_pose_and_text(pose, f"<en> <ase> {related_word}"))
-
-        # print("some unrelated words")
-        # for unrelated_word in unrelated_words:
-        #     print(score_pose_and_text(pose, f"<en> <ase> {unrelated_word}"))
 
 
