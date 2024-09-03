@@ -34,7 +34,6 @@ model_configs = [
 models = {}
 
 for model_name, config_path in model_configs:
-    continue
     # Go get the config file, the config file tells you where to get the checkpoint
     model, tokenizer, aligner = MMPTModel.from_pretrained(
         f"projects/retri/{config_path}.yaml",
