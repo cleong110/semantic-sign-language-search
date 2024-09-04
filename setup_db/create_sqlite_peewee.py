@@ -5,12 +5,10 @@
 # TODO: table of input modalities
 # TODO: can I also store Text + embeddings
 import argparse
-from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField
-from pgvector.peewee import VectorField
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
-from embedding_db import db, db_name, SignVideo, Sign, Embedding, Pose
+from embedding_db import db, db_name, SignVideo, Embedding, Pose
 
 
 

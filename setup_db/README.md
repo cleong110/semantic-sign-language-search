@@ -11,13 +11,23 @@ To setup a DB and search all against all
 # setup the structure
 python embedding_db.py --recreate 
 
+# add videos with embeddings
+python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP
+python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP_asl_citizen_model
 
+# search
+python search_db_all_against_all.py -n 10 -K 7
 
+# output to both
+python search_db_all_against_all.py -n 10 -K 7 2>&1 | tee out.txt
+
+# output to file only 
+python search_db_all_against_all.py -n 10 -K 7 2>&1 > search_results_400_words_10_examples.txt
 # output to both
 python create_sqlite_peewee.py ./ASL_Citizen_curated_sample_embedded_with_signCLIP/videos/ "ASL Citizen Curated Sample Embedded with Signclip Temporal" --pose_embedding_model "signclip_asl-citizen" --recreate 2>&1 | tee out.txt
 
 # output to file only 
-python create_sqlite_peewee.py asl_citizen_400_words_10_examples_each/videos/ asl_citizen_400_words_10_examples --search_all_against_all --recreate 2>&1 > search_results_400_words_10_examples.tx
+python create_sqlite_peewee.py asl_citizen_400_words_10_examples_each/videos/ asl_citizen_400_words_10_examples --search_all_against_all --recreate 2>&1 > search_results_400_words_10_examples.txt
 ```
 
 
