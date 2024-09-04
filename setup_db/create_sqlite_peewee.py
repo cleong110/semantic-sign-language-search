@@ -2,8 +2,10 @@
 # https://www.digitalocean.com/community/tutorials/how-to-backup-postgresql-databases-on-an-ubuntu-vps
 # TODO: Figure out how to store/search Pose format
 # TODO: find a way to specify db_name in args
+# TODO: table of input modalities
+# TODO: can I also store Text + embeddings
 import argparse
-from peewee import Model, PostgresqlDatabase, CharField
+from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
@@ -19,6 +21,10 @@ db = PostgresqlDatabase(db_name)
 def walk_dir_find_vids(embeddings_dir: Path):
     return embeddings_dir.rglob("*.mp4")
 
+def drop_and_recreate(table_names):
+    db.drop_tables(model_names, safe=True)
+    db.create_tables(model_names)
+  
 
 def load_pose_embedding(embedding_path):
     embeddings = np.load(embedding_path)
@@ -27,80 +33,24 @@ def load_pose_embedding(embedding_path):
     # print(f"loaded embeddings with shape {embeddings}")
     return embeddings
 
-
-class BaseModel(Model):
-    class Meta:
-        database = db  # this model uses the database specified with "db_name" above
-
-
-class VideoItem(BaseModel):
-    # primary key is automatically created actually https://docs.peewee-orm.com/en/latest/peewee/models.html#primary-keys-composite-keys-and-other-tricks
-    # id = AutoField()
-    video_path = CharField()
-    pose_embedding = VectorField(
-        dimensions=768
-    )  # SignCLIP embedding for example. TODO: sep. table?
-    # pose_frames = VectorField(dimensions=768) # TODO: what is the shape of Pose fields?
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="TODO", description="setup embedding search", epilog="TODO"
-    )
-    parser.add_argument("video_dir", type=Path, default=Path.cwd())
-    #parser.add_argument("--db_name", default=None)
-    args = parser.parse_args()
-    #if args.db_name is not None:
-    #    db = PostgresqlDatabase(args.db_name)
-
-    print(f"connecting to database {db_name}")
-    db.connect()
-
-    print(f"dropping and recreating VideoItem table from {db_name}")
-    db.drop_tables([VideoItem])
-    db.create_tables([VideoItem])
-
-    # TODO: can I also store Text + embeddings
-    # TODO: can I even load a numpy array in?
-    video_paths = list(walk_dir_find_vids(args.video_dir))
-    print(f"searching {args.video_dir} for vids, found {len(video_paths)}. Adding to db:")
-    for video_path in tqdm(video_paths):
-        pose_embedding = load_pose_embedding(video_path.with_suffix(".npy"))
-        #print(video_path)
-        video_item = VideoItem.create(
-            video_path=video_path, pose_embedding=pose_embedding[0]
-        )
-
-        #save_result = video_item.save()
-        #print(f"saving... result: {save_result}")
-
-    results_limit = 11
-
-    print("testing! Let's look at what's in the VideoItem table:")
+def search_all_against_all():
+    print("testing! Let's look at what's in the SignVideo table:")
     match_counts = []
-    for vid_item in VideoItem.select():
+    for vid_item in SignVideo.select():
         vid_path = Path(vid_item.video_path)
         vid_name = vid_path.name
-        vid_gloss = vid_path.stem.split("-")[-1]
+        vid_gloss = vid_path.stem.split("-")[-1] # videos are of the form <alphanumeric ID>-<gloss>.mp4
         print(f"{vid_name}, gloss: {vid_gloss}")
 
-        # load and put in array so we get (1,768) shape
+        # load and put in array so we get (1,768) shape, same as when originally embedded
         db_pose_embedding = np.array([vid_item.pose_embedding])
-
-        # is it the same as if we load it from the numpy?
-        loaded_pose_embedding = load_pose_embedding(
-            Path(vid_item.video_path).with_suffix(".npy")
-        )
-        print(
-            f"\tIs the loaded the same as the original?\t{np.array_equal(db_pose_embedding,loaded_pose_embedding)}"
-        )
 
         # top 5 closest vectors to this one
         print("\tAND THE CLOSEST VECTORS ARE...")
 
         neighbors = (
-            VideoItem.select()
-            .order_by(VideoItem.pose_embedding.l2_distance(db_pose_embedding[0]))
+            SignVideo.select()
+            .order_by(SignVideo.pose_embedding.pose_embedding.l2_distance(vid_item.pose_embedding.pose_embedding))
             .limit(results_limit)
         )
         match_count = 0
@@ -122,3 +72,94 @@ if __name__ == "__main__":
     print(
         f"Mean match count (out of {results_limit-1} search results retrieved each time) {np.mean(match_counts)}"
     )
+
+
+class BaseModel(Model):
+    class Meta:
+        database = db  # this model uses the database specified with "db_name" above
+
+class Sign(BaseModel):
+    gloss=CharField(unique=True)
+    language_code=CharField()
+
+class Embedding(BaseModel):
+    input_modality=CharField()
+    embedding_model=CharField()
+    embedding = VectorField(
+        dimensions=768
+    )  # SignCLIP embedding for example. 
+
+class Pose(BaseModel):
+    path=CharField()
+    pose_format=CharField()
+
+
+#class SignVideoToEmbedding(BaseModel): # one to many relationships
+#    # We could have multiple embeddings per video. TODO: fill this out
+
+class SignVideo(BaseModel): # clip of a single Sign
+    # primary key is automatically created actually https://docs.peewee-orm.com/en/latest/peewee/models.html#primary-keys-composite-keys-and-other-tricks
+    # TODO: each file does have a unique name/ID. Use that?
+    pose_embedding = ForeignKeyField(Embedding, backref="video")
+    pose = ForeignKeyField(Pose, backref="pose") # TODO: allow null? we might not have pose data for this
+    # sign = ForeignKeyField(Sign, related_name="videos_containing_this", null=True) # maybe we dunno yet
+    vid_gloss = CharField() # maybe we dunno yet
+    # id = AutoField()
+    video_path = CharField()
+    # pose_frames = VectorField(dimensions=768) # TODO: what is the shape of Pose fields?
+
+def populate_with_video_paths(video_paths):
+    print(f"searching {args.video_dir} for vids, found {len(video_paths)}.")
+
+    # find the ones with embeddings
+    print(f"Searching for accompanying embeddings:")
+    video_paths = [video_path for video_path in video_paths if video_path.with_suffix(".npy").is_file()]
+
+    print(f"Found {len(video_paths)} with accompanying .npy file. Adding to db")
+    for video_path in tqdm(video_paths):
+        vid_gloss = video_path.stem.split("-")[-1] # videos are of the form <alphanumeric ID>-<gloss>.mp4
+        pose_file = video_path.with_suffix(".pose")
+        pose_embedding = load_pose_embedding(video_path.with_suffix(".npy")) # shape is (1,768)
+
+        pose_item=Pose.create(path=pose_file, pose_format="mediapipe")
+
+        sign_item = Sign.get_or_create(gloss=vid_gloss, language_code=language_code)
+        pose_embedding_item = Embedding.create(input_modality="pose", embedding_model=pose_embedding_model, embedding=pose_embedding[0])
+
+        video_item = SignVideo.create(
+            video_path=video_path,
+            vid_gloss=vid_gloss, # TODO: figure out Sign table, many to one
+            pose_embedding=pose_embedding_item,
+            sign=sign_item,
+            pose=pose_item,
+        )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="TODO", description="setup embedding search", epilog="TODO"
+    )
+    parser.add_argument("video_dir", type=Path, default=Path.cwd())
+    #parser.add_argument("--pose_dir", type=Path, default=Path.cwd()) # TODO: specify a different dir for poses?
+    parser.add_argument("--pose_embedding_model", default=None)
+    parser.add_argument("--retrieve_k", default=10)
+    #parser.add_argument("--db_name", default=None)
+    args = parser.parse_args()
+
+    # TODO: how to read in language code?
+    language_code="ase"
+    pose_embedding_model = args.pose_embedding_model or "unknown"
+    results_limit = args.retrieve_k+1 # later we discard the top result, aka the video itself
+    #if args.db_name is not None:
+    #    db = PostgresqlDatabase(args.db_name)
+
+    print(f"connecting to database {db_name}")
+    db.connect()
+
+    print(f"dropping and recreating Video table from {db_name}")
+    model_names=[SignVideo, Sign, Pose, Embedding]
+    drop_and_recreate(model_names)
+
+
+    video_paths = list(walk_dir_find_vids(args.video_dir))
+    populate_with_video_paths(video_paths)
