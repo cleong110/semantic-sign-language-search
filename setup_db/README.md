@@ -1,3 +1,12 @@
+To setup a DB and search all against all
+
+```
+python create_sqlite_peewee.py ./ASL_Citizen_curated_sample_embedded_with_signCLIP/videos/ "ASL Citizen Curated Sample Embedded with Signclip Temporal" --pose_embedding_model "signclip_asl-citizen" --recreate 2>&1 | tee out.txt
+```
+
+
+
+
 See also https://github.com/cleong110/semantic-sign-language-search/issues/6
 To setup the database for searching embedding I did: 
 
