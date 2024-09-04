@@ -1,7 +1,23 @@
+I want to be able to: 
+
+1. Given a folder of embedded .mp4 and .npy, add to the db 
+2. Given a path (or paths), search for matches
+
+
+DONE:
 To setup a DB and search all against all
 
 ```
+# setup the structure
+python embedding_db.py --recreate 
+
+
+
+# output to both
 python create_sqlite_peewee.py ./ASL_Citizen_curated_sample_embedded_with_signCLIP/videos/ "ASL Citizen Curated Sample Embedded with Signclip Temporal" --pose_embedding_model "signclip_asl-citizen" --recreate 2>&1 | tee out.txt
+
+# output to file only 
+python create_sqlite_peewee.py asl_citizen_400_words_10_examples_each/videos/ asl_citizen_400_words_10_examples --search_all_against_all --recreate 2>&1 > search_results_400_words_10_examples.tx
 ```
 
 
