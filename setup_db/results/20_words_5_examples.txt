@@ -1,0 +1,19 @@
+==> search_results_20_words_5_examples_asl-citizen.txt <==
+Did 100 searches. Mean match count (out of 10 search results retrieved each time): 3.800
+Expected mean match count of randomly retrieving 10, given on average about 4 possible correct results to retrieve: 0.400
+
+==> search_results_20_words_5_examples_asl-signs.txt <==
+Did 100 searches. Mean match count (out of 10 search results retrieved each time): 3.350
+Expected mean match count of randomly retrieving 10, given on average about 4 possible correct results to retrieve: 0.400
+
+==> search_results_20_words_5_examples_asl_signs.txt <==
+Did 100 searches. Mean match count (out of 10 search results retrieved each time): 3.350
+Expected mean match count of randomly retrieving 10, given on average about 4 possible correct results to retrieve: 0.400
+
+==> search_results_20_words_5_examples_baseline_temporal.txt <==
+Did 100 searches. Mean match count (out of 10 search results retrieved each time): 1.320
+Expected mean match count of randomly retrieving 10, given on average about 4 possible correct results to retrieve: 0.400
+
+==> search_results_20_words_5_examples_sem-lex.txt <==
+Did 100 searches. Mean match count (out of 10 search results retrieved each time): 3.510
+Expected mean match count of randomly retrieving 10, given on average about 4 possible correct results to retrieve: 0.400
