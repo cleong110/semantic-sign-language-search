@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 import torch
@@ -24,31 +25,33 @@ FACEMESH_CONTOURS_POINTS = [
 
 
 model_configs = [
-    # ("baseline_temporal", "semantic-search/embed_with_baseline_temporal"),  # made my own -Colin
-    # ("sem-lex", "semantic-search/embed_with_sem_lex"),
-    # ("asl-signs", "semantic-search/embed_with_asl_signs"),
+    ("baseline_temporal", "semantic-search/embed_with_baseline_temporal"),  # made my own -Colin
+    ("sem-lex", "semantic-search/embed_with_sem_lex"),
+    ("asl-signs", "semantic-search/embed_with_asl_signs"),
     ("asl-citizen", "semantic-search/embed_with_asl_citizen"),
     # ('default', 'signclip_v1_1/baseline_temporal'),
     # ('asl_citizen', 'signclip_asl/asl_citizen_finetune'),
 ]
 models = {}
+def load_models(model_names_to_load):
+    for model_name, config_path in model_configs:
+        if model_name in model_names_to_load:
 
-for model_name, config_path in model_configs:
-    # Go get the config file, the config file tells you where to get the checkpoint
-    model, tokenizer, aligner = MMPTModel.from_pretrained(
-        f"projects/retri/{config_path}.yaml",
-        video_encoder=None,
-    )
-    model.eval()
+            # Go get the config file, the config file tells you where to get the checkpoint
+            model, tokenizer, aligner = MMPTModel.from_pretrained(
+                f"projects/retri/{config_path}.yaml",
+                video_encoder=None,
+            )
+            model.eval()
 
-    if torch.cuda.is_available():
-        model.cuda()
+            if torch.cuda.is_available():
+                model.cuda()
 
-    models[model_name] = {
-        "model": model,
-        "tokenizer": tokenizer,
-        "aligner": aligner,
-    }
+            models[model_name] = {
+                "model": model,
+                "tokenizer": tokenizer,
+                "aligner": aligner,
+            }
 
 
 def pose_normalization_info(pose_header):
@@ -209,20 +212,42 @@ def load_pose_embedding(embedding_path):
 
 
 if __name__ == "__main__":
-    pose_path = (
-        "/shares/volk.cl.uzh/zifjia/RWTH_Fingerspelling/pose/1_1_1_cam2.pose"
-        if len(sys.argv) < 2
-        else sys.argv[1]
+    # pose_path = (
+    #     "/shares/volk.cl.uzh/zifjia/RWTH_Fingerspelling/pose/1_1_1_cam2.pose"
+    #     if len(sys.argv) < 2
+    #     else sys.argv[1]
+    # )
+    parser = argparse.ArgumentParser(
+        prog="TODO", description="embed a file", epilog="TODO"
     )
+    parser.add_argument("pose_dir", type=Path)
+    parser.add_argument("--model_names", type=str, help="Comma-separated list of model names")
 
-    with open(pose_path, "rb") as f:
-        buffer = f.read()
-        pose = Pose.read(buffer)
+    args = parser.parse_args()
+    
+    model_names = args.model_names.split(",")
+    load_models(model_names)
+    pose_paths = list(args.pose_dir.rglob("*.pose")) 
+
+    
 
 
-        embeddings = embed_pose(pose, model_name)
-        embed_out_name =str(Path(pose_path).parent / Path(pose_path).stem) + "-using-model-"+ model_name+".npy"      
-        print(embed_out_name)  
-        save_pose_embedding(embeddings, out_path=Path(embed_out_name))
+
+
+    for model_name in model_names:
+        print(f"Embedding {len(pose_paths)} files with model: {model_name}")
+        for pose_path in pose_paths:
+
+
+            # with open(pose_path, "rb") as f:
+            with pose_path.open("rb") as f:
+                buffer = f.read()
+                pose = Pose.read(buffer)
+
+
+                embeddings = embed_pose(pose, model_name)
+                embed_out_name =str(Path(pose_path).parent / Path(pose_path).stem) + "-using-model-"+ model_name+".npy"      
+                print(embed_out_name)  
+                save_pose_embedding(embeddings, out_path=Path(embed_out_name))
 
 
