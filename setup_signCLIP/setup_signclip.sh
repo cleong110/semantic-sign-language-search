@@ -28,7 +28,7 @@ git clone https://github.com/J22Melody/fairseq.git || echo "already cloned"
 # wget -nc is "no clobber" aka don't redownload.
 
 pretrained_models_folder="fairseq/examples/MMPT/pretrained_models"
-demo_model_folder="runs/signclip_demo/baseline_temporal_checkpoint_best/"
+demo_model_folder="runs/signclip_embed/"
 mkdir -p "$pretrained_models_folder"
 mkdir -p "$demo_model_folder"
 
@@ -60,9 +60,15 @@ gdown --continue --fuzzy "https://drive.google.com/file/d/1Xun_2MQpyR6Ze2LuV1N_x
 gdown --continue --fuzzy "https://drive.google.com/file/d/1qst_2vt8zeNnmEEiONfkqa1ApMSgwU1t/view?usp=drive_link" # asl_signs_finetune_checkpoint_best.pt
 gdown --continue --fuzzy "https://drive.google.com/file/d/166aUSU5HkrMlpCkMNQF_rBLymX56P3fn/view?usp=drive_link" # asl_citizen_finetune_checkpoint_best.pt
 
-# the model HAS to be named this
-cp -v "baseline_temporal_checkpoint_best.pt" "$demo_model_folder/checkpoint_best.pt"
-
+# the model HAS to be named "checkpoint_best.pt"
+mkdir -p "$demo_model_folder/baseline_temporal_checkpoint_best/"
+mkdir -p "$demo_model_folder/asl_citizen_finetune_checkpoint_best/"
+mkdir -p "$demo_model_folder/asl_signs_finetune_checkpoint_best/"
+mkdir -p "$demo_model_folder/sem_lex_finetune_checkpoint_best/"
+cp -v "baseline_temporal_checkpoint_best.pt" "$demo_model_folder/baseline_temporal_checkpoint_best/checkpoint_best.pt"
+cp -v "asl_citizen_finetune_checkpoint_best.pt" "$demo_model_folder/asl_citizen_finetune_checkpoint_best/checkpoint_best.pt"
+cp -v "asl_signs_finetune_checkpoint_best.pt" "$demo_model_folder/asl_signs_finetune_checkpoint_best/checkpoint_best.pt"
+cp -v "sem_lex_finetune_checkpoint_best.pt" "$demo_model_folder/sem_lex_finetune_checkpoint_best/checkpoint_best.pt"
 
 ###################
 # Conda env
