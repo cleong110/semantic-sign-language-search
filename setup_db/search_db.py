@@ -1,14 +1,14 @@
 import argparse
 from embedding_db import db, db_name, SignVideo, Embedding
+from peewee import ModelSelect
 import numpy as np
 from pathlib import Path
 
 # import inquirer # TODO: search options
-
-
 import random_guess_expected_correct_results
 
-def search_vid_against_all(vid_item:SignVideo, retrieve_n:int, same_pose_embedding_model=True)->int:
+def search_vid_against_population(vid_item:SignVideo, retrieve_n:int, signvideo_and_embedding_population_to_search:ModelSelect)->int:
+    
     # TODO: different datasets, 
     # TODO: same
     results_limit = retrieve_n +1 # later we discard the top result, aka the video itself
@@ -20,18 +20,29 @@ def search_vid_against_all(vid_item:SignVideo, retrieve_n:int, same_pose_embeddi
     # load and put in array so we get (1,768) shape, same as when originally embedded
     #db_pose_embedding = np.array([vid_item.pose_embedding.embedding])
 
+    
+
+
     # top 5 closest vectors to this one
     print("\tAND THE CLOSEST VECTORS ARE...")
-    pose_embedding_model_for_this = vid_item.pose_embedding.embedding_model
+    embedding_population = signvideo_and_embedding_population_to_search
 
-    if same_pose_embedding_model:
-        print(f"restricting to embeddings using the same model")
-        embedding_population = Embedding.select().where(Embedding.embedding_model == pose_embedding_model_for_this)
+    # pose_embedding_model_for_this = vid_item.pose_embedding.embedding_model
 
-    else:
-        print(f"Not restricting to embeddings using the same model")
-        embedding_population = Embedding.select()
+    # if same_pose_embedding_model:        
+    #     embedding_population = Embedding.select().where(Embedding.embedding_model == pose_embedding_model_for_this)
+    #     print(f"\trestricting to embeddings using the same model: {embedding_population.count()} found")
+
+    # else:
         
+    #     embedding_population = Embedding.select()
+    #     print(f"\tNot restricting to embeddings using the same model: {embedding_population.count()} found")
+        
+
+    correct_answer_population = embedding_population.where(SignVideo.vid_gloss == vid_item.vid_gloss)
+    possible_correct_answer_count = correct_answer_population.count() -1
+    # correct_answer_count = embedding_population_videos.where(SignVideo.vid_gloss == vid_item.vid_gloss)
+    print(f"\tThere are {possible_correct_answer_count} correct items to retrieve in this population, not counting the video itself")
 
     embedding_neighbors = (
         embedding_population
@@ -39,66 +50,143 @@ def search_vid_against_all(vid_item:SignVideo, retrieve_n:int, same_pose_embeddi
         .limit(results_limit)
     )
 
+    # The number of correct answers is: 
+    # correct_neighbors = embedding_neighbors.where(Embedding.videos[0].vid_gloss == vid_item.vid_gloss)
+    # print(f"There are {correct_neighbors.count()} items with the correct gloss, which we are looking for")
+
     match_count = 0
+    # TODO: try tabulate here?
+    output_lines = []
+    column_names_and_widths = [
+        ("i", 2),    
+        ("filename",35), 
+        ("dataset",30), 
+        ("gloss",30)
+        ]
+    output_line = "\t\t" + ", ".join([f"{spec[0]:{spec[1]}}" for spec in column_names_and_widths])
+    output_lines.append(output_line)
     for i, embedding_neighbor in enumerate(embedding_neighbors):
 
-        # TODO: refactor as in https://github.com/coleifer/peewee/issues/1667
-        # .videos gives you a ModelSelect, something like this:  
-        #       SELECT "t1"."id", "t1"."pose_embedding_id", "t1"."pose_id", "t1"."vid_gloss", "t1"."video_path" FROM "signvideo" AS "t1" WHERE ("t1"."pose_embedding_id"     = 1)
-        # we just want the first one, there should only be one
-        neighbor=embedding_neighbor.videos[0]
-        neighbor_path = Path(neighbor.video_path)
+        neighbor_path = Path(embedding_neighbor.video_path)
         if neighbor_path == vid_path:
-            continue
+            continue # it's the same one
         neighbor_name = neighbor_path.name
-        #neighbor_gloss = neighbor_path.stem.split("-")[-1]
+
         result_output = (
-            f"\t\t{i:<2} {neighbor_name:<40}, gloss: {neighbor.vid_gloss:<30}"
+            f"\t\t{i:<2}, {neighbor_name:<35}, {embedding_neighbor.dataset:<30}, {embedding_neighbor.vid_gloss:<30}"
         )
-        if neighbor.vid_gloss == vid_item.vid_gloss:
-            result_output = result_output + "  MATCH!"
+        # outputs = [i, neighbor_name, embedding_neighbor.dataset, embedding_neighbor.vid_gloss]
+        # result_output = "\t\t" + ", ".join([f"{output[0]:<{output[1][1]}}" for output in zip(outputs, column_names_and_widths)])
+
+        if embedding_neighbor.vid_gloss == vid_item.vid_gloss:
+            result_output = result_output + "\tMATCH!"
             match_count = match_count + 1
-        print(result_output)
+        
+        # print(result_output)
+        output_lines.append(result_output)
+    for output_line in output_lines:
+        print(output_line)
     
-    return match_count
+    return match_count, possible_correct_answer_count
+
+
+def get_embedding_models():
+#     mydb=# SELECT DISTINCT dataset FROM signvideo;
+#           dataset           
+# ----------------------------
+#  ASL_Citizen_curated_sample
+# (1 row)
+
+# mydb=# SELECT DISTINCT embedding_model FROM embedding;
+#           embedding_model          
+# -----------------------------------
+#  signclip_finetuned_on_asl_citizen
+#  temporal
+    distinct_rows = Embedding.select(Embedding.embedding_model).distinct()
+    return [row.embedding_model for row in distinct_rows]
 
 
 
-def search_all_against_all(retrieve_n=10, K=None, same_pose_embedding_model=True):
+def get_datasets():
+    distinct_rows = SignVideo.select(SignVideo.dataset).distinct()
+    return [row.dataset for row in distinct_rows]
+
+
+def search_all_against_all(retrieve_n=10, K=None, population:ModelSelect =None):
     results_limit = retrieve_n +1 # later we discard the top result, aka the video itself
 
 
     # TODO FIXME make the pose embedding model settable. "search all against all that use this specific model"
-    if same_pose_embedding_model:
-        print(f"restricting to embeddings using the same model")
-        embedding_population = Embedding.select().where(Embedding.embedding_model == pose_embedding_model_for_this)
+    # if same_pose_embedding_model:
+    #     print(f"restricting to embeddings using the same model")
+    #     embedding_population = Embedding.select().where(Embedding.embedding_model == pose_embedding_model_for_this)
 
-    else:
-        print(f"Not restricting to embeddings using the same model")
-        embedding_population = Embedding.select()
+    # else:
+    #     print(f"Not restricting to embeddings using the same model")
+    #     embedding_population = Embedding.select()
     
     
     print("testing! Let's look at what's in the SignVideo table:")
-    population_size = SignVideo.select().count()
+    if population is None:
+        print(f"no population provided, using the whole SignVideo table")
+        population = SignVideo.select().join(Embedding)
+
+    
+        
+    
+
+    population_size = population.count() 
+    print(f"Population count for testing is : {population_size}")
+    print(population)
+    # exit()
     match_counts = []
-    for vid_item in SignVideo.select():
-        match_count = search_vid_against_all(vid_item=vid_item, retrieve_n=retrieve_n)
+    possible_correct_answer_counts = []
+    for vid_item in population:
+        match_count, possible_correct_answer_count = search_vid_against_population(vid_item=vid_item, 
+                                                                                   retrieve_n=retrieve_n, 
+                                                                                   signvideo_and_embedding_population_to_search=population)
         match_counts.append(match_count)
-        print(f"{match_count}/{results_limit-1} with the same gloss")
+        possible_correct_answer_counts.append(possible_correct_answer_count)
+        print(f"{match_count}/{retrieve_n} were matches (search results with the same gloss, not counting the video itself)")
     print(
-        f"Did {len(match_counts)} searches. Mean match count (out of {results_limit-1} search results retrieved each time): {np.mean(match_counts):.3f}"
+        f"Did {len(match_counts)} searches. Mean match count (out of {retrieve_n} search results retrieved each time): {np.mean(match_counts):.3f}"
     )
     if K is not None:
         expected_mean_if_random = random_guess_expected_correct_results.expected_correct_results(N=population_size, n=retrieve_n, K=K)
-        print(f"Expected mean match count if randomly retrieving {retrieve_n}, given {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
+        print(f"Expected mean match count of randomly retrieving {retrieve_n}, given {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
+    else: 
+        K = int(np.mean(possible_correct_answer_counts))
+        expected_mean_if_random = random_guess_expected_correct_results.expected_correct_results(N=population_size, n=retrieve_n, K=K)
+        print(f"Expected mean match count of randomly retrieving {retrieve_n}, given on average about {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
+
+
+def get_population_of_signvideo_and_embedding(pose_embedding_model, dataset):
+    population = SignVideo.select().join(Embedding)
+    if pose_embedding_model is not None:
+        print(f"Selecting items with embedding model {pose_embedding_model}")
+        population = population.select().where(Embedding.embedding_model==pose_embedding_model)
+
+    if dataset is not None:
+        print(f"Selecting items with dataset {dataset}")
+        population = population.select().where(SignVideo.dataset==dataset)        
+    population_size = population.count() 
+    print(f"Population count for testing is : {population_size}")
+    return population
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="TODO", description="setup embedding search", epilog="TODO"
     )
+    parser.add_argument("--list_datasets", action="store_true", help="List distinct datasets")
+    parser.add_argument("--list_embedding_models", action="store_true", help="List distinct embedding models")
+
+    parser.add_argument("--search_all_against_all", action="store_true", help="Test by searching for every video against every other")
     parser.add_argument('-n', "--retrieve_n", default=10, type=int, help="Number of search results retrieved")
     #parser.add_argument('-N', "--population_size", type=int, help="Total population size") # calculable.
-    parser.add_argument('-K', "--number_correct_per_class", type=int, help="Number of correct search results in the population")    
+    parser.add_argument('-K', "--number_correct_per_class", type=int, help="Number of correct search results in the population") 
+    parser.add_argument("--pose_embedding_model_for_search", type=str, default=None, help="Restrict all against all to this embedding model")
+    parser.add_argument("--dataset_to_search", type=str, default=None, help="Restrict all against all to this dataset")    
     args = parser.parse_args()
 
     # questions = [
@@ -108,4 +196,19 @@ if __name__ == "__main__":
     #             ),
     # ]
     # answers = inquirer.prompt(questions)
-    search_all_against_all(args.retrieve_n, args.number_correct_per_class)    
+
+    if args.list_datasets:
+        datasets = get_datasets()
+        print("\nDatasets: ")
+        for dataset in datasets:
+            print(f"* {dataset}")
+
+    if args.list_embedding_models:
+        embedding_models = get_embedding_models()
+        print("\nEmbedding Models: ")
+        for model in embedding_models:
+            print(f"* {model}")
+        
+    if args.search_all_against_all:
+        population = get_population_of_signvideo_and_embedding(pose_embedding_model=args.pose_embedding_model_for_search, dataset=args.dataset_to_search)
+        search_all_against_all(args.retrieve_n, args.number_correct_per_class, population)    

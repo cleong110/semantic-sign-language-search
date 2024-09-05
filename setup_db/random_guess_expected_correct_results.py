@@ -1,5 +1,8 @@
 import math
 import argparse
+import functools
+
+
 
 
 
@@ -9,6 +12,7 @@ def hypergeometric_probability(k, N, K, n):
     """
     return (math.comb(K, k) * math.comb(N - K, n - k)) / math.comb(N, n)
 
+@functools.cache
 def expected_correct_results(N, K, n):
     """
     Calculate the expected number of correct results without using numpy.

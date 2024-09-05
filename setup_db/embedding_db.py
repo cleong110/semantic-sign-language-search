@@ -1,5 +1,5 @@
 import argparse
-from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField
+from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField, ModelSelect
 from pgvector.peewee import VectorField
 from pathlib import Path
 

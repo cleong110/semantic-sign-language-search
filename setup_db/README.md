@@ -7,22 +7,41 @@ I want to be able to:
 DONE:
 To setup a DB and search all against all
 
+### Setup db and add videos
 ```
 # setup the structure
 python embedding_db.py --recreate 
 
-# add videos with embeddings
+# add videos with embeddings, using the folder name as the "dataset name", and leaving pose embedding model as "unknown"
 python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP
-python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP_asl_citizen_model
 
-# search
-python search_db_all_against_all.py -n 10 -K 7
+
+# add videos with embeddings, specify "dataset_name" and "pose_embedding_model"
+python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP --pose_embedding_model "temporal" --dataset_name "ASL_Citizen_curated_sample"
+python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP_asl_citizen_model --pose_embedding_model "signclip_finetuned_on_asl_citizen" --dataset_name "ASL_Citizen_curated_sample"
+```
+
+### searching the db and calculate metrics
+```
+# test, specifying there are known to be 4 correct answers per class, retrieving 10 each time. 
+python search_db.py --search_all_against_all -n 10 -K 4
+
+# test, but don't specify correct answer count and let it figure it out from the glosses
+python search_db.py --search_all_against_all -n 10
+
+python search_db.py --search_all_against_all -n 10
 
 # output to both
-python search_db_all_against_all.py -n 10 -K 7 2>&1 | tee out.txt
+python search_db.py -n 10 -K 4 2>&1 | tee out.txt
 
 # output to file only 
-python search_db_all_against_all.py -n 10 -K 7 2>&1 > search_results_400_words_10_examples.txt
+python search_db.py -n 10 -K 4 2>&1 > search_results_400_words_10_examples.txt
+
+```
+
+### old
+```
+
 # output to both
 python create_sqlite_peewee.py ./ASL_Citizen_curated_sample_embedded_with_signCLIP/videos/ "ASL Citizen Curated Sample Embedded with Signclip Temporal" --pose_embedding_model "signclip_asl-citizen" --recreate 2>&1 | tee out.txt
 
