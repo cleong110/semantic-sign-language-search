@@ -17,16 +17,7 @@ class BaseModel(Model):
 #     gloss=CharField(unique=True)
 #     language_code=CharField()
 
-class Embedding(BaseModel):
-    input_modality=CharField()
-    embedding_model=CharField()
-    embedding = VectorField(
-        dimensions=768
-    )  # SignCLIP embedding for example. 
 
-class Pose(BaseModel):
-    path=CharField()
-    pose_format=CharField()
 
 
 #class SignVideoToEmbedding(BaseModel): # one to many relationships
@@ -35,14 +26,27 @@ class Pose(BaseModel):
 class SignVideo(BaseModel): # clip of a single Sign
     # primary key is automatically created actually https://docs.peewee-orm.com/en/latest/peewee/models.html#primary-keys-composite-keys-and-other-tricks
     # TODO: each file does have a unique name/ID. Use that?
-    pose_embedding = ForeignKeyField(Embedding, backref="videos") 
-    pose = ForeignKeyField(Pose, backref="videos") # TODO: allow null? we might not have pose data for this
+    # pose_embeddings = ForeignKeyField(Embedding, backref="videos") 
     #sign = ForeignKeyField(Sign, backref="videos", null=True) # maybe we dunno yet
     vid_gloss = CharField() # maybe we dunno yet
     # id = AutoField()
     video_path = CharField()
     dataset=CharField()
     # pose_frames = VectorField(dimensions=768) # TODO: what is the shape of Pose fields?
+
+class Pose(BaseModel):
+    path=CharField()
+    pose_format=CharField()
+    video = ForeignKeyField(SignVideo, backref="poses")
+
+class Embedding(BaseModel):
+    video=ForeignKeyField(SignVideo, backref="embeddings") # one video, many embeddings
+    input_modality=CharField()
+    embedding_model=CharField()
+    embedding = VectorField(
+        dimensions=768
+    )  # SignCLIP embedding for example. 
+
 
 def drop_and_recreate(model_names):
     db.drop_tables(model_names, safe=True)
