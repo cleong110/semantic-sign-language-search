@@ -23,6 +23,9 @@ python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_w
 
 ### searching the db and calculate metrics
 ```
+# search, list models, list datasets, search all against all, restrict model
+embedding_model="asl-signs" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --pose_embedding_model_for_search "$embedding_model" > "search_results_20_words_5_examples_$embedding_model.txt"
+
 # test, specifying there are known to be 4 correct answers per class, retrieving 10 each time. 
 python search_db.py --search_all_against_all -n 10 -K 4
 
