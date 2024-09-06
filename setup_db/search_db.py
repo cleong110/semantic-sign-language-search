@@ -13,7 +13,7 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
     vid_path = Path(embedded_vid.video.video_path)
     vid_name = vid_path.name
     #vid_gloss = vid_path.stem.split("-")[-1] # videos are of the form <alphanumeric ID>-<gloss>.mp4
-    print(f"{vid_name}, gloss: {embedded_vid.video.vid_gloss}")
+    print(f"{vid_name}, \n\t* gloss: {embedded_vid.video.vid_gloss}, \n\t* dataset:{embedded_vid.video.dataset}, \n\t* embedded with {embedded_vid.embedding_model}")
 
     # load and put in array so we get (1,768) shape, same as when originally embedded
     #db_pose_embedding = np.array([vid_item.pose_embedding.embedding])
@@ -58,8 +58,9 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
     column_names_and_widths = [
         ("i", 2),    
         ("filename",35), 
-        ("dataset",30), 
-        ("gloss",30)
+        ("dataset",60), 
+        ("gloss",30),
+        ("embedding_model",30),
         ]
     output_line = "\t\t" + ", ".join([f"{spec[0]:{spec[1]}}" for spec in column_names_and_widths])
     output_lines.append(output_line)
@@ -70,8 +71,9 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
             continue # it's the same one
         neighbor_name = neighbor_path.name
 
+        widths = [spec_tuple[1] for spec_tuple in column_names_and_widths]
         result_output = (
-            f"\t\t{i:<2}, {neighbor_name:<35}, {embedding_neighbor.video.dataset:<30}, {embedding_neighbor.video.vid_gloss:<30}"
+            f"\t\t{i:<{widths[0]}}, {neighbor_name:{widths[1]}}, {embedding_neighbor.video.dataset:<{widths[2]}}, {embedding_neighbor.video.vid_gloss:<{widths[3]}}, {embedding_neighbor.embedding_model:<{widths[4]}}"
         )
         # outputs = [i, neighbor_name, embedding_neighbor.dataset, embedding_neighbor.vid_gloss]
         # result_output = "\t\t" + ", ".join([f"{output[0]:<{output[1][1]}}" for output in zip(outputs, column_names_and_widths)])
@@ -125,7 +127,7 @@ def search_all_against_all(retrieve_n=10, K=None, population:ModelSelect=None):
 
     population_size = population.count() 
     print(f"Population count for testing is : {population_size}")
-    print(population)
+    # print(population)
     
     # exit()
     match_counts = []
@@ -153,31 +155,34 @@ def search_all_against_all(retrieve_n=10, K=None, population:ModelSelect=None):
 def get_population_of_signvideo_and_embedding(pose_embedding_model, dataset):
     # population = SignVideo.select().join(Embedding)
     population = Embedding.select().join(SignVideo)
-    if pose_embedding_model is not None:
-        print(f"Selecting items with embedding model {pose_embedding_model}")
+    if pose_embedding_model is not None:        
         population = population.select().where(Embedding.embedding_model==pose_embedding_model)
+        print(f"Selecting items with embedding model {pose_embedding_model}. Population is now {population.count()} ")
 
     if dataset is not None:
-        print(f"Selecting items with dataset {dataset}")
+        
         population = population.select().where(SignVideo.dataset==dataset)        
-    population_size = population.count() 
-    print(f"Population count for testing is : {population_size}")
+        print(f"Selecting items with dataset {dataset}. Population is now {population.count()} ")
     return population
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="TODO", description="setup embedding search", epilog="TODO"
+        prog="SearchSignDB", 
+        description="Sign Embedding Search", 
+        #epilog="TODO"
     )
     parser.add_argument("--list_datasets", action="store_true", help="List distinct datasets")
     parser.add_argument("--list_embedding_models", action="store_true", help="List distinct embedding models")
 
+    parser.add_argument("--search_model", type=str, default=None, help="Restrict search population to this embedding model")
+    parser.add_argument("--search_dataset", type=str, default=None, help="Restrict search population to this dataset")    
+    parser.add_argument("--count_pop", action="store_true", help="output the size of the population after Restrictions")
+ 
     parser.add_argument("--search_all_against_all", action="store_true", help="Test by searching for every video against every other")
     parser.add_argument('-n', "--retrieve_n", default=10, type=int, help="Number of search results retrieved")
     #parser.add_argument('-N', "--population_size", type=int, help="Total population size") # calculable.
     parser.add_argument('-K', "--number_correct_per_class", type=int, help="Number of correct search results in the population") 
-    parser.add_argument("--pose_embedding_model_for_search", type=str, default=None, help="Restrict all against all to this embedding model")
-    parser.add_argument("--dataset_to_search", type=str, default=None, help="Restrict all against all to this dataset")    
     args = parser.parse_args()
 
     # questions = [
@@ -192,7 +197,7 @@ if __name__ == "__main__":
         datasets = get_datasets()
         print("\nDatasets: ")
         for dataset in datasets:
-            print(f"* {dataset}")
+            print(f"* {dataset}:")
 
     if args.list_embedding_models:
         embedding_models = get_embedding_models()
@@ -200,9 +205,11 @@ if __name__ == "__main__":
         for model in embedding_models:
             print(f"* {model}")
     
+    population = get_population_of_signvideo_and_embedding(pose_embedding_model=args.search_model, dataset=args.search_dataset)
+    if args.count_pop:
+        print(f"After embeddng model and dataset restrictions, population count for testing is: {population.count()}")
 
 
     if args.search_all_against_all:
-        population = get_population_of_signvideo_and_embedding(pose_embedding_model=args.pose_embedding_model_for_search, dataset=args.dataset_to_search)
         search_all_against_all(args.retrieve_n, args.number_correct_per_class, population)
         

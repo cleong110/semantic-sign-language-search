@@ -22,17 +22,22 @@ def parse_filename_asl_citizen_format(file_path:Path):
     return vid_id, gloss, model_name
 
 def parse_files_in_dir_to_dict(video_dir:Path):
+    print(f"parsing {video_dir}")
     dictionary_of_filenames = {}
     video_paths = list(video_dir.rglob("*.mp4")) 
+    print(f"found {len(video_paths)} .mp4 files")
     npy_paths = list(video_dir.rglob("*.npy")) 
-    for video_path in video_paths:   
+    print(f"found {len(npy_paths)} .npy files")
+    print(f"Parsing .mp4 filenames...")
+    for video_path in tqdm(video_paths):   
         vid_id, gloss, model_name = parse_filename_asl_citizen_format(video_path)
         dictionary_of_filenames[vid_id] = {}
         dictionary_of_filenames[vid_id]["path"] = str(video_path)
         dictionary_of_filenames[vid_id]["gloss"] = gloss
         dictionary_of_filenames[vid_id]["embeddings"] = []
 
-    for npy_path in npy_paths:
+    print(f"Parsing .npy filenames")
+    for npy_path in tqdm(npy_paths):
         vid_id, gloss, model_name = parse_filename_asl_citizen_format(npy_path)
         # print(vid_id, gloss, model_name)
         if vid_id in dictionary_of_filenames:
@@ -46,7 +51,8 @@ def parse_files_in_dir_to_dict(video_dir:Path):
 
 def add_dir_to_db(video_dir:Path, dataset_name:str):
     parsed_dict = parse_files_in_dir_to_dict(video_dir=video_dir)
-    for vid_id, vid_dict in parsed_dict.items():
+    print(f"Adding dataset with name {dataset_name} using files from {video_dir} to db {db_name}")
+    for vid_id, vid_dict in tqdm(parsed_dict.items()):
         # print(vid_id, vid_dict)
 
         video_path = Path(vid_dict["path"])
@@ -153,17 +159,16 @@ if __name__ == "__main__":
     )
     parser.add_argument("video_dir", type=Path, default=Path.cwd())
     parser.add_argument("--dataset_name", default=None)
-    parser.add_argument("--pose_embedding_model", default=None)
+    # parser.add_argument("--pose_embedding_model", default=None, help="add embeddings to db with this model name. Otherwise it will attempt to parse from the filename 'foo-using-model-<model_name>.npy'")
 
     language_code="ase"
     
     args = parser.parse_args()
 
-    pose_embedding_model = args.pose_embedding_model or "unknown"
+    #pose_embedding_model = args.pose_embedding_model or "unknown"
+    #print(f"Pose embedding model: {pose_embedding_model}")
     dataset_name = args.dataset_name or args.video_dir.stem
-
     print(f"dataset_name: {dataset_name}")
-    print(f"Pose embedding model: {pose_embedding_model}")
     add_dir_to_db(args.video_dir, dataset_name=dataset_name)
     signvideo_count = SignVideo.select().count()
     print(f"Now the SignVideo table has {signvideo_count} rows, and the Embedding table has {Embedding.select().count()}")

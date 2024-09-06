@@ -12,19 +12,41 @@ To setup a DB and search all against all
 # setup the structure
 python embedding_db.py --recreate 
 
-# add videos with embeddings, using the folder name as the "dataset name", and leaving pose embedding model as "unknown"
-python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP
+# add videos with embeddings, using the folder name as the "dataset name"
+python add_videos_with_embeddings_to_db.py  /home/vlab/data/ASL_Citizen/ASL_Citizen/ASL_Citizen_curated_sample_with_embeddings_from_all_models/
+
+# add videos with embeddings, specify "dataset_name" so it doesn't get set to "videos"
+python add_videos_with_embeddings_to_db.py  /home/vlab/data/ASL_Citizen/ASL_Citizen/asl_citizen_400_words_10_examples_each/videos --dataset_name "asl_citizen_400_words_10_examples_each"
 
 
-# add videos with embeddings, specify "dataset_name" and "pose_embedding_model"
-python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP --pose_embedding_model "temporal" --dataset_name "ASL_Citizen_curated_sample"
-python add_videos_with_embeddings_to_db.py ASL_Citizen_curated_sample_embedded_with_signCLIP_asl_citizen_model --pose_embedding_model "signclip_finetuned_on_asl_citizen" --dataset_name "ASL_Citizen_curated_sample"
 ```
 
 ### searching the db and calculate metrics
 ```
+# list models and datasets in database
+python search_db.py --list_embedding_models --list_datasets
+
+
 # search, list models, list datasets, search all against all, restrict model
 embedding_model="asl-signs" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --pose_embedding_model_for_search "$embedding_model" > "search_results_20_words_5_examples_$embedding_model.txt"
+
+########################################
+# 400x10 set
+# asl_citizen_400_words_10_examples_each, models asl-signs sem-lex baseline_temporal asl-citizen"
+embedding_model="asl-signs" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --search_model "$embedding_model" --search_dataset "asl_citizen_400_words_10_examples_each" > "search_results_asl_citizen_400_words_10_examples_each_$embedding_model.txt"
+
+embedding_model="sem-lex" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --search_model "$embedding_model" --search_dataset "asl_citizen_400_words_10_examples_each" > "search_results_asl_citizen_400_words_10_examples_each_$embedding_model.txt"
+
+embedding_model="baseline_temporal" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --search_model "$embedding_model" --search_dataset "asl_citizen_400_words_10_examples_each" > "search_results_asl_citizen_400_words_10_examples_each_$embedding_model.txt"
+
+embedding_model="asl-citizen" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --search_model "$embedding_model" --search_dataset "asl_citizen_400_words_10_examples_each" > "search_results_asl_citizen_400_words_10_examples_each_$embedding_model.txt"
+
+
+find . -type f -name "search_results_asl_citizen_400_words_10_examples_each_*"| parallel "echo;echo '===>{/}<======';head -n 14 {}&& tail -n 2 {}" > results/asl_citizen_400_words_10_examples_each.txt
+
+
+##############################################
+
 
 # test, specifying there are known to be 4 correct answers per class, retrieving 10 each time. 
 python search_db.py --search_all_against_all -n 10 -K 4
