@@ -23,6 +23,13 @@ class BaseModel(Model):
 #class SignVideoToEmbedding(BaseModel): # one to many relationships
 #    # We could have multiple embeddings per video. TODO: fill this out
 
+class Dataset(BaseModel):
+    name = CharField()
+    split = CharField()
+
+
+
+
 class SignVideo(BaseModel): # clip of a single Sign
     # primary key is automatically created actually https://docs.peewee-orm.com/en/latest/peewee/models.html#primary-keys-composite-keys-and-other-tricks
     # TODO: each file does have a unique name/ID. Use that?
@@ -33,6 +40,12 @@ class SignVideo(BaseModel): # clip of a single Sign
     video_path = CharField()
     dataset=CharField()
     # pose_frames = VectorField(dimensions=768) # TODO: what is the shape of Pose fields?
+
+# https://hasura.io/learn/database/postgresql/core-concepts/6-postgresql-relationships/
+# https://docs.peewee-orm.com/en/latest/peewee/relationships.html#implementing-many-to-many
+class Dataset_SignVideo(BaseModel):
+    dataset = ForeignKeyField(Dataset)
+    signvideo =ForeignKeyField(SignVideo)
 
 class Pose(BaseModel):
     path=CharField()
