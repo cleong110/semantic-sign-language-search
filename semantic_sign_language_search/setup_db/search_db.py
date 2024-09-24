@@ -1,11 +1,21 @@
 import argparse
-from embedding_db import db, db_name, SignVideo, Embedding
+from .embedding_db import db, db_name, SignVideo, Embedding
 from peewee import ModelSelect
 import numpy as np
 from pathlib import Path
 
+# TODO: New search features:
+# -[ ] Given a specific embedded video, search against a dataset
+# -[ ] Search files in dataset A against dataset B
+
+# TODO: outputs and metrics:
+# -[ ] dataframe output instead of print statements
+# -[ ] json/csv output
+# -[ ] most-confused
+# See https://github.com/J22Melody/fairseq/blob/main/examples/MMPT/mmpt/evaluators/metric.py
+
 # import inquirer # TODO: search options
-import random_guess_expected_correct_results
+from . import random_guess_expected_correct_results
 
 def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding_and_signvideo_population:ModelSelect)->tuple:
     # Expects embedded_vid and signvideo joined table
@@ -147,9 +157,13 @@ def search_all_against_all(retrieve_n=10, K=None, population:ModelSelect=None):
         expected_mean_if_random = random_guess_expected_correct_results.expected_correct_results(N=population_size, n=retrieve_n, K=K)
         print(f"Expected mean match count of randomly retrieving {retrieve_n}, given {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
     else: 
-        K = int(np.mean(possible_correct_answer_counts))
+        K = round(np.mean(possible_correct_answer_counts))
+        print(f"STATS! ")
+        print(f"* On average each video had {np.mean(possible_correct_answer_counts)} others which were valid matches, which rounds to about {K}")
+        print(f"* The lowest number was {np.min(possible_correct_answer_counts)} valid matches, the max number was {np.max(possible_correct_answer_counts)}.")
+        print(f"* The most common number was {np.argmax(np.bincount(possible_correct_answer_counts))}")
         expected_mean_if_random = random_guess_expected_correct_results.expected_correct_results(N=population_size, n=retrieve_n, K=K)
-        print(f"Expected mean match count of randomly retrieving {retrieve_n}, given on average about {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
+        print(f"* Expected mean match count of randomly retrieving {retrieve_n}, given about {K} possible correct results to retrieve: {expected_mean_if_random:.3f}")
 
 
 def get_population_of_signvideo_and_embedding(pose_embedding_model, dataset):

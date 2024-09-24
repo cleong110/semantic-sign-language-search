@@ -1,3 +1,7 @@
+peewee/
+setup_db/results/
+setup_signCLIP/fairseq/
+
 # data files
 *.npy
 *.mp4

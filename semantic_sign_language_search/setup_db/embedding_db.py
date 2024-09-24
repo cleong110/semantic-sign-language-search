@@ -3,7 +3,7 @@ from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField, ModelS
 from pgvector.peewee import VectorField
 from pathlib import Path
 
-db_name = "mydb"
+db_name = "mydb_v2"
 
 # Create an object that handles connections and queries
 db = PostgresqlDatabase(db_name)
@@ -44,8 +44,9 @@ class SignVideo(BaseModel): # clip of a single Sign
 # https://hasura.io/learn/database/postgresql/core-concepts/6-postgresql-relationships/
 # https://docs.peewee-orm.com/en/latest/peewee/relationships.html#implementing-many-to-many
 class Dataset_SignVideo(BaseModel):
-    dataset = ForeignKeyField(Dataset)
-    signvideo =ForeignKeyField(SignVideo)
+    dataset = ForeignKeyField(Dataset, backref="signvideos")
+    signvideo =ForeignKeyField(SignVideo, backref="datasets")
+
 
 class Pose(BaseModel):
     path=CharField()
@@ -77,6 +78,8 @@ if __name__ == "__main__":
 
     table_model_names=[SignVideo, 
                 #  Sign, 
+                Dataset,
+                Dataset_SignVideo,
                  Pose, 
                  Embedding]
 

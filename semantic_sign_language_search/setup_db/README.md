@@ -1,3 +1,13 @@
+Setup: 
+https://github.com/cleong110/semantic-sign-language-search/issues/6
+```
+apt install libpq-dev
+pip install pyscopg
+apt install postgresql 
+createdb <db_name>
+psql "$db_name" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
 I want to be able to: 
 
 1. Given a folder of embedded .mp4 and .npy, add to the db 
@@ -64,6 +74,12 @@ python search_db.py -n 10 -K 4 2>&1 > search_results_400_words_10_examples.txt
 
 ```
 
+
+### peewee resources
+
+#### Query examples
+https://docs.red-dove.com/peewee/peewee/query_examples.html 
+
 ### old
 ```
 
@@ -115,3 +131,4 @@ Simulating 400 classes with 10 examples each: Running 10000 trials
 Simulating 400 classes with 10 examples each: Running 10000 trials
 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 10000/10000 [01:22<00:00, 120.54it/s]After running 10000 trials, the mean of the mean match counts was: 0.022289999999999997
 ```
+
