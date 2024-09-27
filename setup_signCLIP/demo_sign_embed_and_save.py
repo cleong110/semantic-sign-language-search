@@ -1,5 +1,6 @@
 import argparse
 import sys
+import logging
 
 import torch
 import numpy as np
@@ -8,8 +9,9 @@ from pose_format import Pose
 from mmpt.models import MMPTModel
 
 import mediapipe as mp
-
 from pathlib import Path
+from tqdm import tqdm
+import struct
 
 # TODO: don't load every model at once
 # TODO: get things into main
@@ -200,13 +202,12 @@ def score_pose_embedding_and_text_batch(pose_embedding, text, model_name="defaul
 def save_pose_embedding(embeddings, out_path, model_name="default"):
     
     np.save(out_path, embeddings, allow_pickle=False)
-    print(f"Saving pose embeddings with shape {embeddings.shape}")
-    print(f"saved embedding to {out_path}")
+    # print(f"Saving pose embeddings with shape {embeddings.shape}")
+    # print(f"saved embedding to {out_path}")
 
 def load_pose_embedding(embedding_path):
     embeddings = np.load(embedding_path)
-    print(f"loaded embeddings with shape {embeddings.shape}")
-    # print(f"loaded embeddings with shape {embeddings}")
+    # print(f"loaded embeddings with shape {embeddings.shape}")
     return embeddings
 
 
@@ -221,11 +222,16 @@ if __name__ == "__main__":
         prog="TODO", description="embed a file", epilog="TODO"
     )
     parser.add_argument("pose_dir", type=Path)
-    parser.add_argument("--model_names", type=str, help="Comma-separated list of model names")
+    parser.add_argument("--model_names", type=str, default=None, help="Comma-separated list of model names")
 
     args = parser.parse_args()
     
-    model_names = args.model_names.split(",")
+    if args.model_names is not None:
+        model_names = args.model_names.split(",")
+
+    else: 
+        model_names = [config[0] for config in model_configs]
+    print(f"Loading models: {model_names}")
     load_models(model_names)
     pose_paths = list(args.pose_dir.rglob("*.pose")) 
 
@@ -233,21 +239,53 @@ if __name__ == "__main__":
 
 
 
-
+    # outputs = []
     for model_name in model_names:
         print(f"Embedding {len(pose_paths)} files with model: {model_name}")
-        for pose_path in pose_paths:
+        for pose_path in tqdm(pose_paths):
 
 
             # with open(pose_path, "rb") as f:
             with pose_path.open("rb") as f:
-                buffer = f.read()
-                pose = Pose.read(buffer)
+                
+                try:
+                    buffer = f.read()
+                    pose = Pose.read(buffer)
+                
+                
+                
+                # print(f"Embedding pose file: {pose_path}")
+                # outputs.append("**************")
+                # output = f"{pose_path.name}\n\t* shape: {pose.body.data.shape}"
+                
 
 
-                embeddings = embed_pose(pose, model_name)
-                embed_out_name =str(Path(pose_path).parent / Path(pose_path).stem) + "-using-model-"+ model_name+".npy"      
-                print(embed_out_name)  
-                save_pose_embedding(embeddings, out_path=Path(embed_out_name))
+                
+                    embeddings = embed_pose(pose, model_name)
+                    embed_out_name =str(Path(pose_path).parent / Path(pose_path).stem) + "-using-model-"+ model_name+".npy"      
+                    # print(embed_out_name)  
+                    save_pose_embedding(embeddings, out_path=Path(embed_out_name))
+                    # output = output + "\n\t* result: success!"
+                except RuntimeError as e: 
+                    logging.exception(e)
+                    print(f"error when processing {pose_path}: {e}")
+
+                    # output = output + "\n\t* result: " + str(type(e)) + str(e)
+                    negative_dim = f"{e}".split("negative dimension ")[-1]
+                    negative_dim = int(negative_dim.split(":")[0])
+
+                    # print(pose.body.data)
+                    # print(f"WHERE is {negative_dim} in the pose data?")
+
+                    # print(np.where(pose.body.data==negative_dim))
+                except Exception as e:
+                    print(f"{type(e)} error when processing {pose_path}: {e}")
+                    
+                
+                # outputs.append(output)
+                # outputs.append("**************\n")
+        
+    # for output in outputs:
+    #     print(output)
 
 
