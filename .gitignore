@@ -1,6 +1,11 @@
 peewee/
 semantic_sign_language_search/setup_db/results/
 setup_signCLIP/fairseq/
+test_data/
+
+# some debug files
+*.stdout
+*.stderr
 
 # data files
 *.npy
