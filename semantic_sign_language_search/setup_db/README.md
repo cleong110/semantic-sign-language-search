@@ -2,7 +2,7 @@ Setup:
 https://github.com/cleong110/semantic-sign-language-search/issues/6
 ```
 apt install libpq-dev
-pip install pyscopg
+pip install psycopg2
 apt install postgresql 
 createdb <db_name>
 psql "$db_name" -c "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -39,6 +39,9 @@ python search_db.py --list_embedding_models --list_datasets
 
 # search, list models, list datasets, search all against all, restrict model
 embedding_model="asl-signs" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --pose_embedding_model_for_search "$embedding_model" > "search_results_20_words_5_examples_$embedding_model.txt"
+
+# ASL_Citizen_full 
+embedding_model="baseline_temporal" && python search_db.py --list_embedding_models --list_datasets --search_all_against_all -n 10 --search_model "$embedding_model" --search_dataset "ASL_Citizen_full" > "search_results_asl_citizen_full_set_$embedding_model.txt"
 
 ########################################
 # 400x10 set
