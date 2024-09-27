@@ -1,5 +1,5 @@
 peewee/
-setup_db/results/
+semantic_sign_language_search/setup_db/results/
 setup_signCLIP/fairseq/
 
 # data files

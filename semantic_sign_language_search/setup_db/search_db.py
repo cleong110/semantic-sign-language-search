@@ -1,7 +1,9 @@
 import argparse
-from .embedding_db import db, db_name, SignVideo, Embedding
+from .embedding_db import db, db_name, SignVideo, Embedding, load_pose_embedding
+# from embedding_db import db, db_name, SignVideo, Embedding, load_pose_embedding
 from peewee import ModelSelect
 import numpy as np
+import pandas as pd
 from pathlib import Path
 
 # TODO: New search features:
@@ -16,8 +18,63 @@ from pathlib import Path
 
 # import inquirer # TODO: search options
 from . import random_guess_expected_correct_results
+# import random_guess_expected_correct_results
 
-def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding_and_signvideo_population:ModelSelect)->tuple:
+
+def get_subpopulation_matching_filename(vid_name, joined_embedding_and_signvideo_population:ModelSelect):
+    # NOTE: do not do .select() on a ModelSelect! Just chain .where() calls. 
+    # adding a .select makes a subquery, which means it will only return IDs
+    subpopulation = joined_embedding_and_signvideo_population.where(SignVideo.video_path.contains(vid_name))
+    return subpopulation
+    
+def search_population_given_numpy_file(numpy_file, retrieve_n:int, joined_embedding_and_signvideo_population:ModelSelect, gloss_if_known = None):    
+    loaded_embedding = load_pose_embedding(numpy_file)[0]
+    print(f"Loaded embedding: {loaded_embedding.shape}")
+    print(f"Searching population with count {joined_embedding_and_signvideo_population.count()}")
+
+    # results_limit = retrieve_n +1 # later we discard the top result, aka the video itself
+    embedding_neighbors = retrieve_from_population_with_embedding(loaded_embedding, retrieve_n, joined_embedding_and_signvideo_population)
+
+    print(f"Embedding Neighbors count: {embedding_neighbors.count()}")
+    result_dict = {
+        "filename": [],
+        "dataset": [],
+        "gloss": [],
+        "embedding_model": [],
+        "match": []
+    }
+
+    for i, embedding_neighbor in enumerate(embedding_neighbors):
+        neighbor_name = Path(embedding_neighbor.video.video_path).name
+        result_dict["filename"].append(neighbor_name)
+        result_dict["dataset"].append(embedding_neighbor.video.dataset)
+        result_dict["gloss"].append(embedding_neighbor.video.vid_gloss)
+        result_dict["embedding_model"].append(embedding_neighbor.embedding_model)
+        if gloss_if_known is not None:
+            result_dict["match"].append(embedding_neighbor.video.vid_gloss == gloss_if_known)
+
+        else:
+            result_dict["match"] = "?"
+    
+    if gloss_if_known is not None:
+        correct_answer_population = joined_embedding_and_signvideo_population.where(SignVideo.vid_gloss == gloss_if_known)
+        possible_correct_answer_count = correct_answer_population.count()
+    else:
+        possible_correct_answer_count = None
+    return possible_correct_answer_count, pd.DataFrame(data=result_dict)
+
+
+
+
+
+def search_vid_in_db_against_population(embedded_vid, retrieve_n:int, joined_embedding_and_signvideo_population:ModelSelect)->tuple:
+    result_dict = {
+        "filename": [],
+        "dataset": [],
+        "gloss": [],
+        "embedding_model": [],
+        "match": []
+    }
     # Expects embedded_vid and signvideo joined table
     results_limit = retrieve_n +1 # later we discard the top result, aka the video itself
     vid_path = Path(embedded_vid.video.video_path)
@@ -52,11 +109,7 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
     # correct_answer_count = embedding_population_videos.where(SignVideo.vid_gloss == vid_item.vid_gloss)
     print(f"\tThere are {possible_correct_answer_count} correct items to retrieve in this population, not counting the video itself")
 
-    embedding_neighbors = (
-        embedding_population
-        .order_by(Embedding.embedding.l2_distance(embedded_vid.embedding))
-        .limit(results_limit)
-    )
+    embedding_neighbors = retrieve_from_population_with_embedding(embedded_vid.embedding, results_limit, embedding_population)
 
     # The number of correct answers is: 
     # correct_neighbors = embedding_neighbors.where(Embedding.videos[0].vid_gloss == vid_item.vid_gloss)
@@ -74,6 +127,7 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
         ]
     output_line = "\t\t" + ", ".join([f"{spec[0]:{spec[1]}}" for spec in column_names_and_widths])
     output_lines.append(output_line)
+
     for i, embedding_neighbor in enumerate(embedding_neighbors):
 
         neighbor_path = Path(embedding_neighbor.video.video_path)
@@ -93,11 +147,26 @@ def search_vid_against_population(embedded_vid, retrieve_n:int, joined_embedding
             match_count = match_count + 1
         
         # print(result_output)
+        result_dict["filename"].append(neighbor_name)
+        result_dict["dataset"].append(embedding_neighbor.video.dataset)
+        result_dict["gloss"].append(embedding_neighbor.video.vid_gloss)
+        result_dict["embedding_model"].append(embedding_neighbor.embedding_model)
+        result_dict["match"].append(embedding_neighbor.video.vid_gloss == embedded_vid.video.vid_gloss)
         output_lines.append(result_output)
     for output_line in output_lines:
         print(output_line)
     
-    return match_count, possible_correct_answer_count
+    result_df =pd.DataFrame(data=result_dict)
+    return match_count, possible_correct_answer_count, result_df
+
+def retrieve_from_population_with_embedding(embedding, results_limit, embedding_population):
+    embedding_neighbors = (
+        embedding_population
+        .order_by(Embedding.embedding.l2_distance(embedding))
+        .limit(results_limit)
+    )
+    
+    return embedding_neighbors
 
 
 def get_embedding_models():
@@ -116,6 +185,27 @@ def get_embedding_models():
     return [row.embedding_model for row in distinct_rows]
 
 
+def get_glosses_in_population(population:ModelSelect):
+    distinct_rows = population.select(Embedding.video.vid_gloss).distinct()
+    return [row.video.vid_gloss for row in distinct_rows]
+
+def get_gloss_counts_in_population(population:ModelSelect, gloss_values=None):
+    if gloss_values is None:
+        gloss_values = get_glosses_in_population(population)
+    print(f"calculating gloss counts in {population.count()} items")
+    
+    result_dict = {
+        "gloss": [],
+        "count": [],
+    }
+    
+    # print(gloss_values)
+    for gloss_value in get_glosses_in_population(population):
+        # print(gloss_value)
+        gloss_count = population.select().where(Embedding.video.vid_gloss==gloss_value).count()
+        result_dict["gloss"].append(gloss_value)
+        result_dict["count"].append(gloss_count)
+    return pd.DataFrame(data=result_dict)
 
 def get_datasets():
     distinct_rows = SignVideo.select(SignVideo.dataset).distinct()
@@ -143,7 +233,7 @@ def search_all_against_all(retrieve_n=10, K=None, population:ModelSelect=None):
     match_counts = []
     possible_correct_answer_counts = []
     for vid_and_embedding_item in population:
-        match_count, possible_correct_answer_count = search_vid_against_population(embedded_vid=vid_and_embedding_item, 
+        match_count, possible_correct_answer_count, result_df = search_vid_in_db_against_population(embedded_vid=vid_and_embedding_item, 
                                                                                    retrieve_n=retrieve_n, 
                                                                                    joined_embedding_and_signvideo_population=population)
         match_counts.append(match_count)

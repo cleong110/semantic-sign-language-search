@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from embedding_db import db, db_name, SignVideo, Embedding, Pose
+from embedding_db import db, db_name, SignVideo, Embedding, Pose, load_pose_embedding
 
 
 def parse_asl_citizen_splits(path_to_folder_containing_splits:Path) -> pd.DataFrame:
@@ -175,12 +175,7 @@ def add_dir_to_db(video_dir:Path, dataset_name:str, split_info:pd.DataFrame):
 #     print(f"Now the SignVideo table has {signvideo_count} rows")
 
 
-def load_pose_embedding(embedding_path):
-    embeddings = np.load(embedding_path)
-    # print(f"loaded embeddings with shape {embeddings.shape}")  # (1, 768)
-    #   print(f"{embeddings[0]}=") # big long bunch of numbers
-    # print(f"loaded embeddings with shape {embeddings}")
-    return embeddings
+
 
 if __name__ == "__main__":
 

@@ -2,8 +2,16 @@ import argparse
 from peewee import Model, PostgresqlDatabase, CharField, ForeignKeyField, ModelSelect
 from pgvector.peewee import VectorField
 from pathlib import Path
+import numpy as np
 
-db_name = "mydb_v2"
+def load_pose_embedding(embedding_path):
+    embeddings = np.load(embedding_path)
+    # print(f"loaded embeddings with shape {embeddings.shape}")  # (1, 768)
+    #   print(f"{embeddings[0]}=") # big long bunch of numbers
+    # print(f"loaded embeddings with shape {embeddings}")
+    return embeddings
+
+db_name = "mydb"
 
 # Create an object that handles connections and queries
 db = PostgresqlDatabase(db_name)
