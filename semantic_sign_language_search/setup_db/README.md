@@ -14,6 +14,15 @@ I want to be able to:
 2. Given a path (or paths), search for matches
 
 
+GENERATING A DIAGRAM
+I used eralchemy
+```
+# pip install eralchemy[graphviz]
+# sudo apt install graphviz
+eralchemy -i "postgresql://vlab@/mydb" -o semantic_sign_language_search_db_schema.er
+eralchemy -i semantic_sign_language_search_db_schema.er -o semantic_sign_language_search_db_schema.pdf
+```
+
 DONE:
 To setup a DB and search all against all
 
