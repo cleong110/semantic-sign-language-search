@@ -6,6 +6,7 @@ from tqdm import tqdm
 def parse_results_file(result_file, debug=False):
     with open(result_file, 'r') as file:
         lines = file.readlines()
+        print(f"Parsed file has: {len(str(lines))} lines")
 
     data = []
     current_block = None
@@ -31,12 +32,12 @@ def parse_results_file(result_file, debug=False):
                 print(f"Detected query block {block_counter} at line {i+1}: {current_block['query_filename']}")
 
         elif '* gloss:' in line:
-            current_block['query_gloss'] = line.split(':')[1].strip()
+            current_block['query_gloss'] = line.split(':')[1].strip().replace(",","")
             if debug:
                 print(f"  Found gloss at line {i+1}: {current_block['query_gloss']}")
 
         elif '* dataset:' in line:
-            current_block['query_dataset'] = line.split(':')[1].strip()
+            current_block['query_dataset'] = line.split(':')[1].strip().replace(",","")
             if debug:
                 print(f"  Found dataset at line {i+1}: {current_block['query_dataset']}")
 
@@ -93,14 +94,24 @@ def parse_results_file(result_file, debug=False):
 def main():
     parser = argparse.ArgumentParser(description="Parse result file and generate a CSV.")
     parser.add_argument('result_file', type=Path, help="The result file to parse")
-    parser.add_argument('output', type=Path, default='output.csv', help="Output CSV file")
+    parser.add_argument('--output', type=Path, default=None, help="Output CSV file. Default: input filename with .csv")
     parser.add_argument('--debug', action='store_true', help="Print debug information")
     
     args = parser.parse_args()
 
+
+    if args.output is None:
+        
+        args.output = args.result_file.with_suffix(".csv")
+    # else: 
+    #     output =args.output
+
+
+
+
     # Parse the result file
     print(f"Processing file: {args.result_file}")
-    print(f"Input file length: {len(str(args.result_file))} characters")
+
     
     df = parse_results_file(args.result_file, debug=args.debug)
     
