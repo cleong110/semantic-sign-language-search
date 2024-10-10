@@ -27,7 +27,12 @@ DONE:
 To setup a DB and search all against all
 
 ### Setup db and add videos
+
 ```
+createdb mydb
+psql mydb
+CREATE EXTENSION vector;
+
 # setup the structure
 python embedding_db.py --recreate 
 
