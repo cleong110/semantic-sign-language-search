@@ -29,7 +29,8 @@ To setup a DB and search all against all
 ### Setup db and add videos
 
 ```
-createdb mydb
+database_name="foo_db"
+createdb "$database_name"
 psql mydb
 CREATE EXTENSION vector;
 
