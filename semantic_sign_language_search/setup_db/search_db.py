@@ -7,7 +7,6 @@ import pandas as pd
 from pathlib import Path
 
 # TODO: New search features:
-# -[ ] Given a specific embedded video, search against a dataset
 # -[ ] Search files in dataset A against dataset B
 
 # TODO: outputs and metrics:
@@ -16,9 +15,16 @@ from pathlib import Path
 # -[ ] most-confused
 # See https://github.com/J22Melody/fairseq/blob/main/examples/MMPT/mmpt/evaluators/metric.py
 
+# DONE:
+# -[x] Given a specific embedded video, search against a dataset
+
+
 # import inquirer # TODO: search options
 from . import random_guess_expected_correct_results
 # import random_guess_expected_correct_results
+
+def calculate_mean_embedding_vector_norm(joined_embedding_and_signvideo_popularion:ModelSelect):
+    pass
 
 
 def get_subpopulation_matching_filename(vid_name, joined_embedding_and_signvideo_population:ModelSelect):
