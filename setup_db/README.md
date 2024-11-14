@@ -1,11 +1,9 @@
-I want to be able to: 
+# (WIP) Database setupe scripts.
+This folder has code that should help to... 
+1. [embedding_db.py](embedding_db.py) set up a pgvector-enabled database, (you have to [install postgresql](https://ubuntu.com/server/docs/install-and-configure-postgresql) and [enable the pgvector extension](https://github.com/pgvector/pgvector) first)
+2. [add_videos_with_embeddings_to_db.py](add_videos_with_embeddings_to_db.py) populate it with signCLIP embedding .npy files (see [setup_signCLIP](../setup_signCLIP/README.md),
+3. [search_db.py](search_db.py) search/query/filter the db, and run all-against-all experiments on subsets.
 
-1. Given a folder of embedded .mp4 and .npy, add to the db 
-2. Given a path (or paths), search for matches
-
-
-DONE:
-To setup a DB and search all against all
 
 ### Setup db and add videos
 ```
