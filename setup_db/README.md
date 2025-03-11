@@ -5,6 +5,10 @@ This folder has code that should help to...
 3. [search_db.py](search_db.py) search/query/filter the db, and run all-against-all experiments on subsets.
 
 
+# TODO: 
+We need a new schema that can handle PopSign ASL, ASL Citizen, Sem-Lex all in one place.
+https://chatgpt.com/share/67d08f05-e868-800e-86d2-35887a30c83c 
+
 ### Setup db and add videos
 ```
 # setup the structure
