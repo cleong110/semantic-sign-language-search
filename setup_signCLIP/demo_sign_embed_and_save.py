@@ -13,6 +13,8 @@ from tqdm import tqdm
 # TODO: don't load every model at once
 # TODO: get things into main
 
+SIGNCLIP_MAX_FRAMES=256 # or just edit the limit in the .yaml file
+
 mp_holistic = mp.solutions.holistic
 FACEMESH_CONTOURS_POINTS = [
     str(p)
@@ -63,7 +65,7 @@ def load_models(model_names_to_load):
             print("*" * 40)
 
 
-def preprocess_pose(pose):
+def preprocess_pose(pose: Pose, max_frames=None):
     pose = pose.get_components(
         [
             "POSE_LANDMARKS",
@@ -79,6 +81,9 @@ def preprocess_pose(pose):
 
     feat = np.nan_to_num(pose.body.data)
     feat = feat.reshape(feat.shape[0], -1)
+
+    if max_frames is not None:
+        feat = feat[:max_frames]  # Truncate to max_frames if provided
 
     pose_frames = torch.from_numpy(np.expand_dims(feat, axis=0)).float()
 
@@ -119,7 +124,7 @@ def preprocess_text(text, model_name="default"):
     return caps, cmasks
 
 
-def embed_pose(pose, model_name="default"):
+def embed_pose(pose, model_name="default", max_frames=None):
     model = models[model_name]["model"]
 
     caps, cmasks = preprocess_text("", model_name)
@@ -127,7 +132,7 @@ def embed_pose(pose, model_name="default"):
     embeddings = []
 
     for pose in poses:
-        pose_frames = preprocess_pose(pose)
+        pose_frames = preprocess_pose(pose, max_frames=max_frames)
 
         with torch.no_grad():
             output = model(pose_frames, caps, cmasks, return_score=False)
@@ -153,6 +158,14 @@ if __name__ == "__main__":
         type=Path,
         help="Where to save the resulting embeddings. Default: same dir as the pose file",
     )
+
+    parser.add_argument(
+        "--truncate_long_files",
+        "-t",
+        action="store_true",
+        help=f"Whether to truncate files longer than max frames {SIGNCLIP_MAX_FRAMES}",
+    )
+
     parser.add_argument(
         "--overwrite_embeddings",
         "-o",
@@ -160,15 +173,27 @@ if __name__ == "__main__":
         help="Whether to write over embedding .npy files if they already exist (default false)",
     )
 
+    parser.add_argument(
+        "--skip_existing",
+        "-s",
+        action="store_true",
+        help="Whether to skip over embedding .npy files if they already exist (default false)",
+    )
+
     args = parser.parse_args()
 
     print("%" * 20)
+
     print(f"Searching {args.pose_dir}")
     pose_paths = find_pose_files(args.pose_dir)
     print(f"{len(pose_paths)} pose files found")
 
-    out_folder = args.out_folder
+    max_frames=None
+    if args.truncate_long_files:
+        max_frames = SIGNCLIP_MAX_FRAMES
 
+    
+    out_folder = args.out_folder
     if out_folder is not None:
         out_folder = Path(out_folder)
         if not out_folder.is_dir():
@@ -180,13 +205,14 @@ if __name__ == "__main__":
         ]
     else:
         model_names = args.model_names.split(",")
-
-    # print(f"Loading Models: {model_names}")
     load_models(model_names)
-    for pose_path in tqdm(pose_paths, desc=f"Embedding with models {model_names}"):
+    print(f"Embedding with models {model_names}")
+
+
+
+    for pose_path in tqdm(pose_paths, desc=f"Embedding"):
         for model_name in model_names:
             pose = load_pose_file(pose_path)
-            embeddings = embed_pose(pose, model_name)
             if args.out_folder is None:
                 out_folder = Path(pose_path).parent
             embed_out_name = (
@@ -195,8 +221,26 @@ if __name__ == "__main__":
                 + model_name
                 + ".npy"
             )
-            if Path(embed_out_name).is_file() and not args.overwrite_embeddings:
-                raise FileExistsError(
-                    f"{embed_out_name} Exists, and overwrite is set to {args.overwrite_embeddings}! Rerun with -o or --overwrite_embeddings if you are sure"
-                )
-            save_pose_embedding(embeddings, out_path=Path(embed_out_name))
+
+            if Path(embed_out_name).is_file():
+                if args.overwrite_embeddings:
+                    pass  # no issue, keep going and overwrite it.
+                if args.skip_existing:
+                    continue  # skip!
+                else:
+                    raise FileExistsError(
+                        f"{embed_out_name} Exists! Rerun with -o (overwrite) or -s (skip) if you are sure"
+                    )
+            try:
+                embeddings = embed_pose(pose, model_name, max_frames=max_frames)
+                save_pose_embedding(embeddings, out_path=Path(embed_out_name))
+            except AssertionError as e:
+                if "Video too long. Received frame count" in str(e):
+                    # print warning
+
+                    error_file = Path(embed_out_name).with_suffix(".txt")
+                    print(
+                        f"Could not embed {pose_path}, video too long. Writing exception to {error_file}"
+                    )
+                    with error_file.open("w") as ef:
+                        ef.writelines(str(e))
