@@ -13,7 +13,7 @@ from tqdm import tqdm
 # TODO: don't load every model at once
 # TODO: get things into main
 
-SIGNCLIP_MAX_FRAMES=256 # or just edit the limit in the .yaml file
+SIGNCLIP_MAX_FRAMES = 256  # or just edit the limit in the .yaml file
 
 mp_holistic = mp.solutions.holistic
 FACEMESH_CONTOURS_POINTS = [
@@ -40,7 +40,7 @@ models = {}
 
 
 def load_models(model_names_to_load):
-    print(f"*" * 40)
+    print("*" * 40)
     for model_name, config_path in model_configs:
         if model_name in model_names_to_load:
 
@@ -188,11 +188,10 @@ if __name__ == "__main__":
     pose_paths = find_pose_files(args.pose_dir)
     print(f"{len(pose_paths)} pose files found")
 
-    max_frames=None
+    max_frames = None
     if args.truncate_long_files:
         max_frames = SIGNCLIP_MAX_FRAMES
 
-    
     out_folder = args.out_folder
     if out_folder is not None:
         out_folder = Path(out_folder)
@@ -208,9 +207,7 @@ if __name__ == "__main__":
     load_models(model_names)
     print(f"Embedding with models {model_names}")
 
-
-
-    for pose_path in tqdm(pose_paths, desc=f"Embedding"):
+    for pose_path in tqdm(pose_paths, desc="Embedding"):
         for model_name in model_names:
             pose = load_pose_file(pose_path)
             if args.out_folder is None:
@@ -239,8 +236,13 @@ if __name__ == "__main__":
                     # print warning
 
                     error_file = Path(embed_out_name).with_suffix(".txt")
+
                     print(
                         f"Could not embed {pose_path}, video too long. Writing exception to {error_file}"
                     )
-                    with error_file.open("w") as ef:
-                        ef.writelines(str(e))
+                    with error_file.open("w", encoding="utf-8") as ef:
+                        error_to_write = f"{pose_path} \n {e}"
+                        ef.writelines(error_to_write)
+
+                else:
+                    raise
