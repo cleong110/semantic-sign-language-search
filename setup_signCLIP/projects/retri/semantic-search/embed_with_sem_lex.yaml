@@ -1,5 +1,5 @@
 dataset:
-  max_video_len: 256
+  max_video_len: 300
   max_len: 64
   meta_processor: SignCLIPPretrainMetaProcessor
   video_processor: PoseProcessor

@@ -50,4 +50,4 @@ model:
 loss:
   loss_cls: MMContraLoss
 eval:
-  save_path: runs/signclip_embed/asl_signs_finetune_checkpoint_best/ # 
+  save_path: runs/signclip_embed/pop_sign_finetune_checkpoint_best/ # 
